@@ -1,0 +1,3 @@
+<?php
+// Módulo de usuarios
+?>
