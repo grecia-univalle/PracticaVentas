@@ -117,23 +117,11 @@ $search = $_GET['search'] ?? '';
 
 /*
 |--------------------------------------------------------------------------
-| OBTENER GÉNEROS
+| API JUEGOS POPULARES
 |--------------------------------------------------------------------------
 */
 
-$genresUrl = "https://api.rawg.io/api/genres?key=$apiKey";
-
-$genresJson = file_get_contents($genresUrl);
-
-$genresData = json_decode($genresJson, true);
-
-/*
-|--------------------------------------------------------------------------
-| API JUEGOS
-|--------------------------------------------------------------------------
-*/
-
-$url = "https://api.rawg.io/api/games?key=$apiKey&page_size=20";
+$url = "https://api.rawg.io/api/games?key=$apiKey&page_size=20&ordering=-metacritic";
 
 if(!empty($search)){
 
@@ -170,7 +158,7 @@ name="viewport"
 content="width=device-width, initial-scale=1.0"
 >
 
-<title>Gamer Universe</title>
+<title>Juegos Populares</title>
 
 <script src="https://cdn.tailwindcss.com"></script>
 
@@ -197,27 +185,8 @@ body{
     border-color:#9333ea;
 }
 
-.hero-shadow{
-    background:linear-gradient(
-        to right,
-        rgba(0,0,0,.95),
-        rgba(0,0,0,.6),
-        rgba(0,0,0,.2)
-    );
-}
-
 .glow{
     box-shadow:0 0 30px rgba(168,85,247,.4);
-}
-
-.category-menu{
-    max-height:0;
-    overflow:hidden;
-    transition:all .4s ease;
-}
-
-.category-menu.active{
-    max-height:500px;
 }
 
 </style>
@@ -268,7 +237,7 @@ body{
 
             <a
                 href="usuario.php"
-                class="flex items-center gap-4 bg-gradient-to-r from-purple-600 to-fuchsia-600 px-5 py-4 rounded-2xl"
+                class="flex items-center gap-4 hover:bg-[#151d34] px-5 py-4 rounded-2xl transition-all"
             >
                 <i class="fa-solid fa-house"></i>
                 Inicio
@@ -276,7 +245,7 @@ body{
 
             <a
                 href="popular.php"
-                class="flex items-center gap-4 hover:bg-[#151d34] px-5 py-4 rounded-2xl transition-all"
+                class="flex items-center gap-4 bg-gradient-to-r from-purple-600 to-fuchsia-600 px-5 py-4 rounded-2xl"
             >
                 <i class="fa-solid fa-fire"></i>
                 Juegos Populares
@@ -289,84 +258,6 @@ body{
                 <i class="fa-solid fa-gift"></i>
                 Juegos Gratis
             </a>
-
-            <!-- CATEGORIAS -->
-
-            <button
-                onclick="toggleCategories()"
-                class="w-full flex items-center justify-between hover:bg-[#151d34] px-5 py-4 rounded-2xl transition-all"
-            >
-
-                <div class="flex items-center gap-4">
-
-                    <i class="fa-solid fa-layer-group"></i>
-                    Categorías
-
-                </div>
-
-                <i class="fa-solid fa-chevron-down"></i>
-
-            </button>
-
-            <!-- SUBMENU -->
-
-            <div
-                id="categoryMenu"
-                class="category-menu ml-5 space-y-2"
-            >
-
-                <?php
-
-               if(isset($genresData['results'])){
-
-    /*
-    |--------------------------------------------------------------------------
-    | ORDENAR POR CANTIDAD DE JUEGOS
-    |--------------------------------------------------------------------------
-    */
-
-    usort($genresData['results'], function($a, $b){
-
-        return $b['games_count'] - $a['games_count'];
-
-    });
-
-    /*
-    |--------------------------------------------------------------------------
-    | MOSTRAR SOLO 5 CATEGORÍAS
-    |--------------------------------------------------------------------------
-    */
-
-    $topGenres = array_slice($genresData['results'], 0, 5);
-
-    foreach($topGenres as $genre){
-
-        echo '
-
-        <a
-            href="categoria.php?genre='.$genre['slug'].'"
-            class="block px-4 py-2 rounded-xl hover:bg-[#151d34] text-gray-300 text-sm transition-all"
-        >
-
-            <div class="flex items-center justify-between">
-
-                <span>'.$genre['name'].'</span>
-
-                <span class="text-purple-400 text-xs">
-                    '.$genre['games_count'].'
-                </span>
-
-            </div>
-
-        </a>
-
-        ';
-    }
-}
-
-                ?>
-
-            </div>
 
             <a
                 href="favorito.php"
@@ -407,7 +298,7 @@ body{
                 name="search"
                 list="games"
                 value="<?php echo htmlspecialchars($search); ?>"
-                placeholder="Buscar juegos..."
+                placeholder="Buscar juegos populares..."
                 class="w-full bg-[#0b1020] border border-purple-900/20 rounded-2xl py-4 px-6 outline-none focus:border-purple-500"
             >
 
@@ -479,51 +370,23 @@ body{
 
             </a>
 
-            <!-- PERFIL -->
-
-            <div class="w-14 h-14 rounded-full bg-gradient-to-r from-purple-600 to-fuchsia-600 flex items-center justify-center font-black text-2xl">
-                A
-            </div>
-
         </div>
 
     </div>
 
-    <!-- HERO -->
+    <!-- TITULO -->
 
-    <section class="relative overflow-hidden rounded-[35px] h-[420px] border border-purple-900/20 bg-[#0b1020] mb-10">
+    <div class="mb-10">
 
-        <img
-            id="slideImage"
-            src="https://images.unsplash.com/photo-1542751371-adc38448a05e?q=80&w=1600&auto=format&fit=crop"
-            class="absolute inset-0 w-full h-full object-cover transition-all duration-700"
-        >
+        <h1 class="text-5xl font-black">
+            🔥 Juegos Populares
+        </h1>
 
-        <div class="absolute inset-0 hero-shadow"></div>
+        <p class="text-gray-400 mt-3">
+            Descubre los videojuegos más populares y mejor valorados.
+        </p>
 
-        <div class="relative z-10 p-10 max-w-[600px]">
-
-            <span class="bg-purple-600 px-5 py-2 rounded-full text-sm">
-                NUEVA TEMPORADA
-            </span>
-
-            <h1 class="text-7xl font-black mt-6 leading-none">
-
-                GAMER
-
-                <span class="text-purple-500 block">
-                    UNIVERSE
-                </span>
-
-            </h1>
-
-            <p class="mt-5 text-gray-300 text-xl">
-                Explora miles de videojuegos y descuentos increíbles.
-            </p>
-
-        </div>
-
-    </section>
+    </div>
 
     <!-- JUEGOS -->
 
@@ -537,7 +400,7 @@ body{
 
                     <?php
 
-                    $precio = rand(80,400);
+                    $precio = rand(150,500);
 
                     ?>
 
@@ -587,7 +450,7 @@ body{
 
                                 </div>
 
-                                <div class="bg-purple-600/20 text-purple-400 px-3 py-1 rounded-xl text-sm whitespace-nowrap">
+                                <div class="bg-orange-600/20 text-orange-400 px-3 py-1 rounded-xl text-sm whitespace-nowrap">
 
                                     ⭐ <?php echo $game['rating']; ?>
 
@@ -624,8 +487,7 @@ body{
 
                                 <p class="text-gray-400 text-sm">
 
-                                    Videojuego disponible para PC y consolas.
-                                    Explora mundos épicos y disfruta una experiencia gamer increíble.
+                                    Uno de los videojuegos más populares del momento con excelentes valoraciones.
 
                                 </p>
 
@@ -703,41 +565,6 @@ body{
 
 /*
 |--------------------------------------------------------------------------
-| CARRUSEL
-|--------------------------------------------------------------------------
-*/
-
-const images = [
-
-"https://images.unsplash.com/photo-1542751371-adc38448a05e?q=80&w=1600&auto=format&fit=crop",
-
-"https://images.unsplash.com/photo-1511512578047-dfb367046420?q=80&w=1600&auto=format&fit=crop",
-
-"https://images.unsplash.com/photo-1493711662062-fa541adb3fc8?q=80&w=1600&auto=format&fit=crop",
-
-"https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?q=80&w=1600&auto=format&fit=crop"
-
-];
-
-let current = 0;
-
-const slide = document.getElementById("slideImage");
-
-setInterval(()=>{
-
-    current++;
-
-    if(current >= images.length){
-
-        current = 0;
-    }
-
-    slide.src = images[current];
-
-},4000);
-
-/*
-|--------------------------------------------------------------------------
 | FAVORITOS AJAX
 |--------------------------------------------------------------------------
 */
@@ -782,20 +609,9 @@ function addCart(id){
     .then(data => {
 
         document.getElementById("cartCount").innerText = data.count;
+
+        window.location.href = "carrito.php";
     });
-}
-
-/*
-|--------------------------------------------------------------------------
-| MENU CATEGORIAS
-|--------------------------------------------------------------------------
-*/
-
-function toggleCategories(){
-
-    const menu = document.getElementById("categoryMenu");
-
-    menu.classList.toggle("active");
 }
 
 </script>
