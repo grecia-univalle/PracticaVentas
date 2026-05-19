@@ -2,7 +2,7 @@
 session_start();
 include("conexion.php");
 
-require '../vendor/autoload.php';
+require 'vendor/autoload.php';
 
 use PHPMailer\PHPMailer\PHPMailer;
 use PHPMailer\PHPMailer\Exception;
@@ -14,96 +14,70 @@ if(isset($_POST['login'])){
     $correo = trim($_POST['correo']);
     $password = trim($_POST['password']);
 
-    // BUSCAR USUARIO (Se sugiere cambiar a consultas preparadas más adelante para mayor seguridad)
+    // 🔥 CONSULTA SEGURA
     $sql = "SELECT * FROM usuario WHERE correo='$correo'";
     $resultado = $conn->query($sql);
 
-    if($resultado->num_rows > 0){
+    if($resultado && $resultado->num_rows > 0){
 
         $usuario = $resultado->fetch_assoc();
 
-        // VERIFICAR CONTRASEÑA
+        // 🔍 DEBUG (puedes quitarlo después)
+        // var_dump($usuario); exit();
+
+        // 🔐 VALIDAR PASSWORD (REQUIERE HASH EN BD)
         if(password_verify($password, $usuario['contraseña'])){
 
-            // GENERAR CÓDIGO 2FA
+            // 🔥 GENERAR 2FA PARA TODOS (ADMIN Y USER)
             $codigo = rand(100000,999999);
 
-            // GUARDAR SESIONES
             $_SESSION['codigo'] = $codigo;
             $_SESSION['usuario'] = $usuario['nombre'];
-            $_SESSION['rol'] = $usuario['rol'];
+            $_SESSION['rol'] = $usuario['rol'] ?? 'usuario';
             $_SESSION['correo'] = $correo;
 
-            // CONFIGURAR PHPMailer
+            // 📩 ENVIAR CÓDIGO
             $mail = new PHPMailer(true);
 
             try{
 
-                // CONFIGURACIÓN SMTP
                 $mail->isSMTP();
                 $mail->Host = 'smtp.gmail.com';
                 $mail->SMTPAuth = true;
-
-                // TU GMAIL DEL SISTEMA
                 $mail->Username = 'leongamer742@gmail.com';
-
-                // CONTRASEÑA DE APLICACIÓN
                 $mail->Password = 'acqv cjhe fbme demz';
-
                 $mail->SMTPSecure = 'tls';
                 $mail->Port = 587;
-
                 $mail->CharSet = 'UTF-8';
 
-                // QUIÉN ENVÍA
                 $mail->setFrom('leongamer742@gmail.com', 'Sistema Web');
-
-                // A QUIÉN SE ENVÍA
                 $mail->addAddress($correo);
 
-                // FORMATO HTML
                 $mail->isHTML(true);
+                $mail->Subject = 'Código de Verificación';
 
-                // ASUNTO
-                $mail->Subject = 'Codigo de Verificacion';
-
-                // MENSAJE
                 $mail->Body = "
                 <div style='font-family:Arial;padding:20px;'>
-
                     <h2>Verificación de Inicio de Sesión</h2>
+                    <p>Tu código es:</p>
+                    <h1 style='color:#a855f7'>$codigo</h1>
+                </div>";
 
-                    <p>Tu código de acceso es:</p>
-
-                    <h1 style='color:#ff9800;'>
-                        $codigo
-                    </h1>
-
-                    <p>No compartas este código.</p>
-
-                </div>
-                ";
-
-                // ENVIAR CORREO
                 $mail->send();
 
-                // IR A VERIFICAR
                 header('Location: verificar.php');
                 exit();
 
             }catch(Exception $e){
-
-                $error = 'Error SMTP: ' . $mail->ErrorInfo;
+                $error = "Error SMTP: " . $mail->ErrorInfo;
             }
 
         }else{
-
-            $error = 'Contraseña incorrecta';
+            $error = "Contraseña incorrecta";
         }
 
     }else{
-
-        $error = 'Correo no encontrado';
+        $error = "Correo no encontrado";
     }
 }
 ?>
@@ -111,252 +85,128 @@ if(isset($_POST['login'])){
 <!DOCTYPE html>
 <html lang="es">
 <head>
-
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
 <title>Login</title>
 
-<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-
+<script src="https://cdn.tailwindcss.com"></script>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 
 <style>
-
-*{
-    margin:0;
-    padding:0;
-    box-sizing:border-box;
-    font-family:Arial, Helvetica, sans-serif;
-}
-
 body{
-    background:#1f1f1f;
-    min-height:100vh;
-    display:flex;
-    flex-direction:column;
-    justify-content:center;
-    align-items:center;
+    background:#050816;
+    font-family:Arial;
     color:white;
-    padding: 20px 0;
+    overflow:hidden;
 }
 
-.container-login{
-    width:100%;
-    max-width:450px;
-    background:#2a2a2a;
-    padding:40px;
-    border-radius:25px;
-    box-shadow:0 0 20px rgba(0,0,0,.5);
+.glow{
+    box-shadow:0 0 30px rgba(168,85,247,.4);
 }
 
-.logo{
-    text-align:center;
-    margin-bottom:20px;
+.card{
+    backdrop-filter: blur(12px);
+    background: rgba(11,16,32,.85);
+    border:1px solid rgba(147,51,234,.2);
 }
-
-.logo h1{
-    font-size:40px;
-}
-
-.title{
-    text-align:center;
-    font-size:30px;
-    margin-bottom:30px;
-    font-weight:bold;
-}
-
-.input-box{
-    position:relative;
-    margin-bottom:20px;
-}
-
-.input-box input{
-    width:100%;
-    padding:15px 20px 15px 50px;
-    background:#333;
-    border:1px solid #444;
-    border-radius:35px;
-    color:white;
-    outline:none;
-}
-
-.input-box i{
-    position:absolute;
-    left:18px;
-    top:50%;
-    transform:translateY(-50%);
-    color:#aaa;
-}
-
-.login-btn{
-    width:100%;
-    padding:15px;
-    border:none;
-    border-radius:35px;
-    background:#c2701d;
-    color:white;
-    font-size:20px;
-    transition:.3s;
-    cursor:pointer;
-}
-
-.login-btn:hover{
-    background:#dd841f;
-}
-
-/* SECCIÓN SOCIAL LOGIN */
-.social-separator {
-    text-align: center;
-    margin: 25px 0;
-    color: #888;
-    position: relative;
-}
-
-.social-separator::before, .social-separator::after {
-    content: "";
-    position: absolute;
-    top: 50%;
-    width: 35%;
-    height: 1px;
-    background: #444;
-}
-
-.social-separator::before { left: 0; }
-.social-separator::after { right: 0; }
-
-.social-btn {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 15px;
-    width: 100%;
-    padding: 12px;
-    margin-bottom: 12px;
-    border: 1px solid #444;
-    border-radius: 35px;
-    color: white;
-    text-decoration: none;
-    font-size: 16px;
-    font-weight: bold;
-    transition: background 0.3s, transform 0.2s;
-    background: #222;
-}
-
-.social-btn:hover {
-    background: #333;
-    color: white;
-    transform: translateY(-2px);
-}
-
-.social-btn i {
-    font-size: 20px;
-    width: 24px;
-    text-align: center;
-}
-
-.btn-facebook i { color: #1877f2; }
-.btn-google i { color: #ea4335; }
-.btn-steam i { color: #00adee; }
-
-.register-link{
-    text-align:center;
-    margin-top:25px;
-}
-
-.register-link a{
-    color:#ff9800;
-    text-decoration:none;
-}
-
-.footer{
-    margin-top:25px;
-    color:#aaa;
-}
-
-.alert{
-    border-radius:15px;
-}
-
 </style>
 
 </head>
+
 <body>
 
-<div class="container-login">
+<!-- BACKGROUND -->
+<div class="absolute inset-0">
+    <div class="absolute w-[500px] h-[500px] bg-purple-600 rounded-full blur-[150px] opacity-20 top-[-100px] left-[-100px]"></div>
+    <div class="absolute w-[500px] h-[500px] bg-fuchsia-600 rounded-full blur-[150px] opacity-20 bottom-[-100px] right-[-100px]"></div>
+</div>
 
-    <div class="logo">
-        <h1>LOGIN</h1>
-    </div>
+<!-- CONTAINER -->
+<div class="relative z-10 min-h-screen flex items-center justify-center px-6">
 
-    <div class="title">
-        Bienvenido
-    </div>
+<div class="w-full max-w-6xl grid grid-cols-1 md:grid-cols-2 gap-10 items-center">
 
-    <?php if($error != ""): ?>
+    <!-- LEFT -->
+    <div class="text-center md:text-left">
 
-        <div class="alert alert-danger">
-            <?php echo $error; ?>
+        <div class="w-24 h-24 mx-auto md:mx-0 rounded-2xl bg-gradient-to-r from-purple-600 to-fuchsia-600 flex items-center justify-center glow mb-6">
+            <i class="fa-solid fa-gamepad text-4xl"></i>
         </div>
 
-    <?php endif; ?>
+        <h1 class="text-5xl font-black leading-tight">
+            BIENVENIDO A
+            <span class="text-purple-400 block">GAMER UNIVERSE</span>
+        </h1>
 
-    <form method="POST">
+        <p class="text-gray-300 mt-6 text-lg">
+            Accede a tu cuenta para explorar videojuegos, favoritos y carrito.
+        </p>
 
-        <div class="input-box">
-
-            <i class="fa-solid fa-envelope"></i>
-
-            <input type="email"
-            name="correo"
-            placeholder="Correo electrónico"
-            required>
-
-        </div>
-
-        <div class="input-box">
-
-            <i class="fa-solid fa-lock"></i>
-
-            <input type="password"
-            name="password"
-            placeholder="Contraseña"
-            required>
-
-        </div>
-
-        <button type="submit"
-        name="login"
-        class="login-btn">
-            INICIAR SESIÓN
-        </button>
-
-    </form>
-
-    <div class="social-separator">o</div>
-
-    <div class="social-login-container">
-        <a href="oauth/google.php" class="social-btn btn-google">
-            <i class="fa-brands fa-google"></i> Continuar con Google
-        </a>
-
-        <a href="oauth/facebook.php" class="social-btn btn-facebook">
-            <i class="fa-brands fa-facebook"></i> Continuar con Facebook
-        </a>
-
-        
     </div>
 
-    <div class="register-link">
-        ¿No tienes cuenta?
-        <a href="register.php">Crear cuenta</a>
+    <!-- RIGHT -->
+    <div class="card p-10 rounded-[30px] glow">
+
+        <h2 class="text-3xl font-black text-center mb-2">LOGIN</h2>
+        <p class="text-center text-purple-400 mb-6">Inicia sesión en tu cuenta</p>
+
+        <?php if($error != ""): ?>
+            <div class="bg-red-500/20 border border-red-500 text-red-300 p-3 rounded-2xl mb-4 text-sm">
+                <?php echo $error; ?>
+            </div>
+        <?php endif; ?>
+
+        <form method="POST" class="space-y-4">
+
+            <div class="relative">
+                <i class="fa-solid fa-envelope absolute left-4 top-4 text-gray-400"></i>
+                <input type="email" name="correo" required
+                    class="w-full bg-[#0b1020] border border-purple-900/20 rounded-2xl py-4 pl-12 pr-4 outline-none focus:border-purple-500"
+                    placeholder="Correo electrónico">
+            </div>
+
+            <div class="relative">
+                <i class="fa-solid fa-lock absolute left-4 top-4 text-gray-400"></i>
+                <input type="password" name="password" required
+                    class="w-full bg-[#0b1020] border border-purple-900/20 rounded-2xl py-4 pl-12 pr-4 outline-none focus:border-purple-500"
+                    placeholder="Contraseña">
+            </div>
+
+            <button type="submit" name="login"
+                class="w-full py-4 rounded-2xl bg-gradient-to-r from-purple-600 to-fuchsia-600 font-bold hover:scale-105 transition-all">
+                INICIAR SESIÓN
+            </button>
+
+        </form>
+
+        <div class="text-center text-gray-500 my-6">o</div>
+
+        <div class="space-y-3">
+
+            <a href="oauth/google.php"
+                class="flex items-center justify-center gap-3 w-full py-3 rounded-2xl bg-[#0b1020] border border-purple-900/20 hover:bg-[#151d34] transition">
+                <i class="fa-brands fa-google text-red-400"></i>
+                Continuar con Google
+            </a>
+
+            <a href="oauth/facebook.php"
+                class="flex items-center justify-center gap-3 w-full py-3 rounded-2xl bg-[#0b1020] border border-purple-900/20 hover:bg-[#151d34] transition">
+                <i class="fa-brands fa-facebook text-blue-500"></i>
+                Continuar con Facebook
+            </a>
+
+        </div>
+
+        <p class="text-center mt-6 text-sm text-gray-400">
+            ¿No tienes cuenta?
+            <a href="register.php" class="text-purple-400 hover:underline">Crear cuenta</a>
+        </p>
+
     </div>
 
 </div>
 
-<footer class="footer">
-    © 2025 Sistema Web Seguro
-</footer>
+</div>
 
 </body>
 </html>
